@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DuckRun — your own local AI</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="duck">🦆</span> DuckRun <span class="tag">v0.1.0</span></div>
+  <nav>
+    <button class="nav-btn active" data-view="models">Models</button>
+    <button class="nav-btn" data-view="chat">Chat</button>
+  </nav>
+  <div id="engine-pill" class="pill idle">no model loaded</div>
+</header>
+
+<main>
+  <!-- ============ MODELS VIEW ============ -->
+  <section id="view-models" class="view">
+    <div class="card">
+      <h2>Download a model</h2>
+      <p class="muted">Any public Hugging Face repo. GGUF repos load via llama.cpp, MLX repos via Apple's MLX.</p>
+      <div class="row">
+        <input id="dl-repo" placeholder="e.g. mlx-community/Qwen3-4B-4bit" spellcheck="false">
+        <select id="dl-format">
+          <option value="auto">auto-detect</option>
+          <option value="gguf">GGUF (llama.cpp)</option>
+          <option value="mlx">MLX</option>
+        </select>
+        <button id="dl-btn" class="primary">Download</button>
+      </div>
+      <div id="dl-error" class="error hidden"></div>
+      <div id="jobs"></div>
+    </div>
+
+    <div class="card">
+      <h2>Local models <span id="disk-free" class="muted"></span></h2>
+      <div id="model-list" class="grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ CHAT VIEW ============ -->
+  <section id="view-chat" class="view hidden">
+    <div class="card chat-card">
+      <div class="row">
+        <select id="chat-model"></select>
+        <button id="chat-load" class="primary">Load model</button>
+        <button id="chat-unload">Unload</button>
+        <span id="chat-hint" class="muted"></span>
+      </div>
+      <div id="messages"></div>
+      <div class="row composer">
+        <input id="chat-input" placeholder="Ask anything… (runs 100% locally)" autocomplete="off">
+        <button id="chat-send" class="primary">Send</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>DuckRun v0.1.0 · local-first · <span class="muted">nothing leaves your machine except Hugging Face downloads</span></footer>
+<script src="app.js"></script>
+</body>
+</html>

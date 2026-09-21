@@ -1,0 +1,17 @@
+# DuckRun example config. Copy to duckrun.yaml next to run.sh,
+# or to ~/.duckrun/config.yaml. CLI flags (--host, --port) win over this file.
+host: "127.0.0.1"
+port: 11434
+
+# Where models, registry and logs live. "~" is expanded.
+data_dir: "~/.duckrun"
+
+backends:
+  # Path to the llama-server binary. If empty, DuckRun looks on PATH.
+  llama_cpp_binary: ""
+  # Extra flags appended to every llama-server launch, e.g. ["--n-gpu-layers", "99"]
+  llama_cpp_extra_args: []
+  # Extra flags appended to every `python -m mlx_lm.server` launch.
+  mlx_extra_args: []
+  # Seconds to wait for a backend child server to answer /health after spawn.
+  startup_timeout: 120

@@ -1,0 +1,2 @@
+[console_scripts]
+duckrun = duckrun.__main__:main
