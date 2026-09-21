@@ -64,6 +64,25 @@ class DownloadJob:
         }
 
 
+def _pick_single_gguf(files: list[tuple[str, int]]) -> list[tuple[str, int]]:
+    """GGUF repos usually ship many quants; llama-server loads exactly one file.
+
+    Prefer Q4_K_M (the standard size/quality default), else take the largest
+    single .gguf (least-quantized). Returns a one-element list.
+    """
+    if len(files) <= 1:
+        return files
+    for fname, fsize in files:
+        if "q4_k_m" in fname.lower():
+            log.info("[duckrun] gguf: %d quants available, picking Q4_K_M (%s)",
+                     len(files), fname)
+            return [(fname, fsize)]
+    fname, fsize = max(files, key=lambda fs: fs[1])
+    log.info("[duckrun] gguf: %d quants available, no Q4_K_M, picking largest (%s)",
+             len(files), fname)
+    return [(fname, fsize)]
+
+
 class DownloadManager:
     def __init__(self, models_dir: Path, on_complete=None):
         _sanitize_no_proxy()
@@ -108,6 +127,7 @@ class DownloadManager:
             files = [(s.rfilename, s.size or 0) for s in (info.siblings or [])]
             if model_format == "gguf":
                 files = [(f, s) for f, s in files if f.endswith(".gguf")]
+                files = _pick_single_gguf(files)
             elif model_format == "mlx":
                 files = [(f, s) for f, s in files if not f.endswith(".gguf")]
             if not files:
@@ -134,7 +154,11 @@ class DownloadManager:
             detected = model_format
             if detected == "auto":
                 detected = "gguf" if any(f.endswith(".gguf") for f, _ in files) else "mlx"
-            entry = self.on_complete(job.repo_id, detected, dest) if self.on_complete else {}
+            model_path = dest
+            if detected == "gguf" and len(files) == 1:
+                # llama-server takes a single model file, not a directory
+                model_path = dest / files[0][0]
+            entry = self.on_complete(job.repo_id, detected, model_path) if self.on_complete else {}
             job.model_id = entry.get("id", job.model_id) if entry else job.model_id
             job.state = "done"
             log.info("[duckrun] download complete: %s", job.repo_id)
