@@ -96,7 +96,13 @@ def create_app(cfg: DuckRunConfig) -> FastAPI:
                     engine.chat_stream(body), media_type="text/event-stream"
                 )
             resp = await engine.chat(body)
-            return JSONResponse(status_code=resp.status_code, content=resp.json())
+            try:
+                content = resp.json()
+            except Exception:
+                # Some backends answer errors as plain text (e.g. mlx_lm.server's
+                # 404 for a rejected `model` value). Don't 500 on it.
+                content = {"error": resp.text[:2000], "backend_status": resp.status_code}
+            return JSONResponse(status_code=resp.status_code, content=content)
         except RuntimeError as e:
             raise HTTPException(409, str(e))
         except Exception as e:  # noqa: BLE001
@@ -142,7 +148,7 @@ def create_app(cfg: DuckRunConfig) -> FastAPI:
         if not entry:
             raise HTTPException(404, f"unknown model {req.model_id}")
         try:
-            return engine.load(entry["id"], entry["path"], entry["format"])
+            return engine.load(entry["id"], entry["path"], entry["format"], entry.get("repo_id", ""))
         except (ValueError, RuntimeError, TimeoutError) as e:
             raise HTTPException(409, str(e))
 

@@ -52,3 +52,10 @@ class MlxBackend(Backend):
         except Exception:
             pass
         return None
+
+    def public_model_name(self, model_id: str, repo_id: str) -> str:
+        # mlx_lm.server validates the chat `model` field as an HF repo_id and
+        # answers 404 + plain-text body when it fails validation. DuckRun's
+        # slugified registry ids ("org--name") always fail that check, so send
+        # the real repo id instead (verified against mlx-lm 0.29.1).
+        return repo_id or model_id

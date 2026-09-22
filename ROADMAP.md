@@ -12,7 +12,16 @@
       uses `python -m mlx_lm server`; `[mlx]` extra added to pyproject, run.sh
       auto-installs it on darwin/arm64
 - [ ] Verify `llama-server` argv against the llama.cpp release Ryan installs
-- [ ] First real inference run end-to-end (download → load → chat)
+- [x] First real inference run end-to-end (download → load → chat) (2026-09-22) —
+      full pipeline verified live on the Mac mini through DuckRun's own code:
+      DownloadManager (MLX weight dir, 148 MB, format auto-detected "mlx") →
+      registry → EngineManager.load (MLX backend) → engine.chat → 200 with a real
+      completion → unload + full cleanup. Test fixture removed; nothing left behind.
+- [x] Fixed: EngineManager sent DuckRun's slugified registry id
+      ("org--name") as the chat `model` field; mlx_lm.server validates it as an
+      HF repo_id and answers 404 + plain-text body. Backends now expose
+      `public_model_name()` — MLX sends the real repo_id. Also hardened
+      `/v1/chat/completions` against non-JSON backend error bodies.
 
 ## v2 — server mode + tool calling
 

@@ -31,6 +31,7 @@ class EngineManager:
         }
         self.active_backend: Backend | None = None
         self.active_model_id: str | None = None
+        self.active_backend_model: str | None = None  # `model` value sent to the child
         self.active_port: int | None = None
         self._proc: ManagedProcess | None = None
         # Loopback only — never let proxy env vars touch backend traffic.
@@ -53,7 +54,7 @@ class EngineManager:
         }
 
     # -- lifecycle ----------------------------------------------------------
-    def load(self, model_id: str, model_path: str, model_format: str) -> dict:
+    def load(self, model_id: str, model_path: str, model_format: str, repo_id: str = "") -> dict:
         backend_name = FORMAT_BACKENDS.get(model_format)
         if not backend_name:
             raise ValueError(f"unknown model format {model_format!r}")
@@ -78,6 +79,7 @@ class EngineManager:
         self._proc = proc
         self.active_backend = backend
         self.active_model_id = model_id
+        self.active_backend_model = backend.public_model_name(model_id, repo_id)
         self.active_port = port
         log.info("[duckrun] loaded %s on %s (port %d)", model_id, backend_name, port)
         return {"model": model_id, "backend": backend_name, "port": port}
@@ -90,6 +92,7 @@ class EngineManager:
             log.info("[duckrun] unloaded %s", self.active_model_id)
         self.active_backend = None
         self.active_model_id = None
+        self.active_backend_model = None
         self.active_port = None
 
     def shutdown(self) -> None:
@@ -97,23 +100,25 @@ class EngineManager:
 
     # -- proxying -----------------------------------------------------------
     def _require_active(self) -> tuple[Backend, int, str]:
-        if not (self.active_backend and self.active_port and self.active_model_id):
+        if not (self.active_backend and self.active_port and self.active_model_id
+                and self.active_backend_model):
             raise RuntimeError("no model loaded — load one first via /api/backend/load")
-        return self.active_backend, self.active_port, self.active_model_id
+        return self.active_backend, self.active_port, self.active_backend_model
 
     async def chat(self, body: dict) -> httpx.Response:
         """Non-streaming passthrough to the child server."""
-        _, port, model_id = self._require_active()
+        _, port, backend_model = self._require_active()
         body = dict(body)
-        body.setdefault("model", model_id)
+        body["model"] = backend_model  # single-model server: always the loaded one,
+        # using the name the child backend accepts (see public_model_name)
         r = await self._client.post(f"http://127.0.0.1:{port}/v1/chat/completions", json=body, timeout=600.0)
         return r
 
     async def chat_stream(self, body: dict) -> AsyncIterator[bytes]:
         """Streaming passthrough (SSE) to the child server."""
-        _, port, model_id = self._require_active()
+        _, port, backend_model = self._require_active()
         body = dict(body)
-        body.setdefault("model", model_id)
+        body["model"] = backend_model
         body["stream"] = True
         async with self._client.stream(
             "POST", f"http://127.0.0.1:{port}/v1/chat/completions", json=body, timeout=None

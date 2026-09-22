@@ -49,3 +49,12 @@ class Backend(ABC):
     # -- shared helpers -----------------------------------------------------
     def supports_format(self, fmt: str) -> bool:
         return fmt in self.detect().formats
+
+    def public_model_name(self, model_id: str, repo_id: str) -> str:
+        """The `model` value DuckRun sends the child server in proxied /v1 calls.
+
+        Defaults to DuckRun's registry id. Backends whose child server validates
+        the model field (e.g. mlx_lm.server checks it as an HF repo_id) override
+        this to return a value the child accepts.
+        """
+        return model_id
