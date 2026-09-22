@@ -16,6 +16,11 @@ dependencies = [
 [project.scripts]
 duckrun = "duckrun.__main__:main"
 
+# Apple Silicon only. Install with `pip install -e ".[mlx]"` (or let run.sh do it
+# on darwin/arm64). Kept as an extra so Linux/Windows installs never pull MLX.
+[project.optional-dependencies]
+mlx = ["mlx-lm>=0.26"]
+
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"

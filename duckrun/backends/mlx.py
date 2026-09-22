@@ -28,8 +28,12 @@ class MlxBackend(Backend):
         return BackendInfo(name=self.name, available=True, formats=["mlx"])
 
     def build_command(self, model_path: str, port: int, extra_args: list[str]) -> list[str]:
+        # `python -m mlx_lm.server` is deprecated as of mlx-lm 0.31 — the supported
+        # forms are the `mlx_lm.server` console script or `python -m mlx_lm server`.
+        # We use the -m form so the backend always runs in DuckRun's own venv
+        # (no PATH lookup for the console script).
         return [
-            sys.executable, "-m", "mlx_lm.server",
+            sys.executable, "-m", "mlx_lm", "server",
             "--model", model_path,
             "--port", str(port),
             *extra_args,

@@ -11,7 +11,12 @@ fi
 source .venv/bin/activate
 
 echo "[duckrun] installing/updating deps..."
-pip install -q -e . 2>/dev/null || pip install -q -r requirements.txt
+if [[ "$(uname)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+  # Apple Silicon: also install the MLX extra so the mlx backend works out of the box.
+  pip install -q -e ".[mlx]" 2>/dev/null || pip install -q -r requirements.txt
+else
+  pip install -q -e . 2>/dev/null || pip install -q -r requirements.txt
+fi
 
 echo "[duckrun] starting..."
 exec python -m duckrun "$@"

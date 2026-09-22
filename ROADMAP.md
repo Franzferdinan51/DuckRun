@@ -7,7 +7,10 @@
 - [x] Real process supervision: spawn, health-check, graceful shutdown
 - [x] Model manager: HF downloads with progress, registry, disk readout, delete
 - [x] Web UI: models view + streaming chat, no build step
-- [ ] Harden on the Mac mini: verify `mlx_lm.server` flags against installed mlx-lm version
+- [x] Harden on the Mac mini: installed mlx-lm 0.31.3, verified server flags
+      (2026-09-22) — `python -m mlx_lm.server` is deprecated upstream; backend now
+      uses `python -m mlx_lm server`; `[mlx]` extra added to pyproject, run.sh
+      auto-installs it on darwin/arm64
 - [ ] Verify `llama-server` argv against the llama.cpp release Ryan installs
 - [ ] First real inference run end-to-end (download → load → chat)
 
